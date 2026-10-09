@@ -140,9 +140,10 @@ class ReaderSettings(private val prefs: SharedPreferences) {
         val FOCUS_READING = Setting("focus_reading", "Focus Reading", OFF_ON, 0, icon = "book_open_text")
         val EMBEDDED_STYLE = Setting("embedded_style", "Book's Embedded Style", OFF_ON, 1, icon = "paintbrush")
         val ANTI_ALIASING = Setting("text_anti_aliasing", "Text Anti-Aliasing", OFF_ON, 1, icon = "sparkles")
+        val FONT_HINTING = Setting("font_hinting", "Font Hinting", OFF_ON, 0, icon = "type")
         val IMAGES = Setting("image_rendering", "Images", listOf("Display", "Placeholder", "Hide"), 0, icon = "image")
         val TEXT = listOf(FONT_SIZE, LINE_SPACING, WORD_SPACING, CHARACTER_SPACING, MARGIN, ALIGNMENT, EXTRA_SPACING,
-            INDENT, HYPHENATION, FOCUS_READING, EMBEDDED_STYLE, ANTI_ALIASING, IMAGES)
+            INDENT, HYPHENATION, FOCUS_READING, EMBEDDED_STYLE, ANTI_ALIASING, FONT_HINTING, IMAGES)
 
         // --- Display (Settings button) ---
         val CONTINUOUS_SCROLL = Setting("continuous_scroll", "Continuous Scroll", OFF_ON, 0, icon = "scroll_text")

@@ -797,6 +797,8 @@ class ReaderActivity : ComponentActivity(), ReaderPanelHost {
         // text run past the right margin.
         text.breakStrategy = android.graphics.text.LineBreaker.BREAK_STRATEGY_HIGH_QUALITY
         text.paint.isAntiAlias = settings.on(S.ANTI_ALIASING)
+        // Keep outline coverage instead of snapping stems to the pixel grid; allow font-specific comparison.
+        text.paint.hinting = if (settings.on(S.FONT_HINTING)) android.graphics.Paint.HINTING_ON else android.graphics.Paint.HINTING_OFF
         // Fractional glyph positions, as Chromium draws them; without this every glyph snaps to a whole pixel and spacing goes uneven.
         text.paint.isSubpixelText = true
         text.invalidate()
