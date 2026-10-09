@@ -20,6 +20,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntSize
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.crosspoint.launcher.util.Dither
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -219,19 +228,31 @@ fun BookCover(
 ) {
     val colors = CrossPointTheme.colors
     val m = CrossPointTheme.metrics
+    var coverSize by remember { mutableStateOf(IntSize.Zero) }
+    var rendered by remember(cover, coverSize) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(cover, coverSize) {
+        if (cover != null && coverSize.width > 0 && coverSize.height > 0) {
+            rendered = withContext(Dispatchers.Default) {
+                Dither.cover(cover.asAndroidBitmap(), coverSize.width, coverSize.height).asImageBitmap()
+            }
+        }
+    }
     Box(
         modifier = modifier
+            .onSizeChanged { coverSize = it }
             .clip(RoundedCornerShape(m.cornerRadius))
             .border(1.5.dp, colors.divider, RoundedCornerShape(m.cornerRadius))
             .background(colors.surface),
         contentAlignment = Alignment.Center
     ) {
-        if (cover != null) {
+        val image = rendered
+        if (image != null) {
             Image(
-                bitmap = cover,
+                bitmap = image,
                 contentDescription = title,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.None,
+                filterQuality = FilterQuality.None
             )
         } else {
             Column(

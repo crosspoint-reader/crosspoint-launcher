@@ -21,11 +21,12 @@ import java.security.MessageDigest
 
 /** Native instrumentation, no test framework: adb shell am instrument -w ...test/...IntegrationChecks */
 class IntegrationChecks : Instrumentation() {
+    private var coversOnly = false
     private var pinsOnly = false
     private var statsOnly = false
     private var readerOnly = false
     private var syncOnly = false
-    override fun onCreate(arguments: Bundle?) { pinsOnly = arguments?.getString("pinsOnly") == "true"; statsOnly = arguments?.getString("statsOnly") == "true"; readerOnly = arguments?.getString("readerOnly") == "true"; syncOnly = arguments?.getString("syncOnly") == "true"; super.onCreate(arguments); start() }
+    override fun onCreate(arguments: Bundle?) { coversOnly = arguments?.getString("coversOnly") == "true"; pinsOnly = arguments?.getString("pinsOnly") == "true"; statsOnly = arguments?.getString("statsOnly") == "true"; readerOnly = arguments?.getString("readerOnly") == "true"; syncOnly = arguments?.getString("syncOnly") == "true"; super.onCreate(arguments); start() }
     override fun onStart() {
         if (pinsOnly) { PinnedAppsChecks.run(this); return }
         val result = Bundle()
@@ -39,7 +40,7 @@ class IntegrationChecks : Instrumentation() {
             } catch (e: Throwable) { result.putString("stream", e.stackTraceToString()); finish(Activity.RESULT_CANCELED, result) }
             return
         }
-        try { if (statsOnly) { CoverCacheChecks.run(targetContext); StatsChecks.run(this); ScrollbarChecks.run(this); result.putString("stream", "Stats API, offline cache, navigation and scrollbar checks passed\n"); finish(Activity.RESULT_OK, result); return }; if (readerOnly) { checkSync(); checkReader(); ReaderSyncChecks.run(this, targetContext); result.putString("stream", "Reader controls and sync checks passed\n"); finish(Activity.RESULT_OK, result); return }; checkAuroraVerification(); checkSync(); OpdsChecks.run(targetContext); checkReader(); ReaderSyncChecks.run(this, targetContext); CompactLayoutChecks.run(this); SetupAndCatalogChecks.run(this); HomeGestureChecks.run(this); result.putString("stream", "Setup, catalog transitions, compact layout, OPDS 1/2, sync and native reader integration checks passed\n"); finish(Activity.RESULT_OK, result) }
+        try { if (coversOnly) { CoverCacheChecks.run(targetContext); result.putString("stream", "Cover sizing, monochrome dithering, transparency and cache checks passed\n"); finish(Activity.RESULT_OK, result); return }; if (statsOnly) { CoverCacheChecks.run(targetContext); StatsChecks.run(this); ScrollbarChecks.run(this); result.putString("stream", "Stats API, offline cache, navigation and scrollbar checks passed\n"); finish(Activity.RESULT_OK, result); return }; if (readerOnly) { checkSync(); checkReader(); ReaderSyncChecks.run(this, targetContext); result.putString("stream", "Reader controls and sync checks passed\n"); finish(Activity.RESULT_OK, result); return }; checkAuroraVerification(); checkSync(); OpdsChecks.run(targetContext); checkReader(); ReaderSyncChecks.run(this, targetContext); CompactLayoutChecks.run(this); SetupAndCatalogChecks.run(this); HomeGestureChecks.run(this); result.putString("stream", "Setup, catalog transitions, compact layout, OPDS 1/2, sync and native reader integration checks passed\n"); finish(Activity.RESULT_OK, result) }
         catch (e: Throwable) { result.putString("stream", e.stackTraceToString()); finish(Activity.RESULT_CANCELED, result) }
     }
 

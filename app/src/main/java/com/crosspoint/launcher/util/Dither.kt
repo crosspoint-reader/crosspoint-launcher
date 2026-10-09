@@ -3,16 +3,16 @@ package com.crosspoint.launcher.util
 import android.graphics.Bitmap
 
 /**
- * Photo -> e-ink: luminance, auto-levels, then Floyd-Steinberg error diffusion to the panel's four
- * greys. Ported from crosspoint-sync's wallpaper pipeline (quantize.ts / tone.ts / dither.ts,
- * originally crosspoint-pxc-converter by zgredex) so the launcher matches the sleep-screen look there.
+ * Photo -> e-ink: luminance, auto-levels, then Floyd-Steinberg error diffusion.
+ * Covers use black/white; sleep screens retain four levels. Ported from crosspoint-sync's
+ * wallpaper pipeline (originally crosspoint-pxc-converter by zgredex).
  */
 object Dither {
     private val GRAY_DISP = intArrayOf(0, 85, 170, 255)
     private val THRESHOLDS = intArrayOf(43, 128, 213)
 
-    /** Returns a new bitmap of the same size, dithered to the four panel greys. */
-    fun toEink(src: Bitmap, config: Bitmap.Config = Bitmap.Config.ARGB_8888): Bitmap {
+    /** Returns a new bitmap with four gray levels, or black/white when monochrome is requested. */
+    fun toEink(src: Bitmap, config: Bitmap.Config = Bitmap.Config.ARGB_8888, monochrome: Boolean = false): Bitmap {
         val w = src.width
         val h = src.height
         val px = IntArray(w * h).also { src.getPixels(it, 0, w, 0, 0, w, h) }
@@ -26,15 +26,15 @@ object Dither {
 
         applyAutoLevels(lum)
 
-        // Floyd-Steinberg to four levels.
+        // Diffuse error only after selecting the final output palette.
         val out = IntArray(w * h)
         for (y in 0 until h) {
             for (x in 0 until w) {
                 val i = y * w + x
                 val v = lum[i].coerceIn(0f, 255f)
-                val q = quantize(v)
-                out[i] = 0xFF000000.toInt() or (GRAY_DISP[q] * 0x010101)
-                val e = v - GRAY_DISP[q]
+                val gray = if (monochrome) { if (v < 128f) 0 else 255 } else GRAY_DISP[quantize(v)]
+                out[i] = 0xFF000000.toInt() or (gray * 0x010101)
+                val e = v - gray
                 if (x + 1 < w) lum[i + 1] += e * 7 / 16
                 if (y + 1 < h) {
                     if (x > 0) lum[i + w - 1] += e * 3 / 16
@@ -44,6 +44,22 @@ object Dither {
             }
         }
         return Bitmap.createBitmap(out, w, h, config)
+    }
+
+    /** Crop and resize before dithering so display scaling cannot blend the black/white dots. */
+    fun cover(src: Bitmap, width: Int, height: Int): Bitmap {
+        require(width > 0 && height > 0)
+        val scaled = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        try {
+            val canvas = android.graphics.Canvas(scaled)
+            canvas.drawColor(android.graphics.Color.WHITE)
+            val scale = maxOf(width.toFloat() / src.width, height.toFloat() / src.height)
+            val left = (width - src.width * scale) / 2f
+            val top = (height - src.height * scale) / 2f
+            canvas.drawBitmap(src, null, android.graphics.RectF(left, top, left + src.width * scale, top + src.height * scale),
+                android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG))
+            return toEink(scaled, Bitmap.Config.RGB_565, monochrome = true)
+        } finally { scaled.recycle() }
     }
 
     private fun quantize(v: Float): Int =

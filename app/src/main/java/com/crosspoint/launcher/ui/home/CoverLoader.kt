@@ -32,11 +32,8 @@ internal object CoverCache {
         images.get(path)?.let { if (it.modified == modified && it.length == length) return it.image }
         return runCatching {
             CoverImages.decode { file.inputStream() }?.let { decoded ->
-                // Dither to the four panel greys so covers aren't rough on e-ink (RGB_565 keeps memory flat).
-                val bitmap = com.crosspoint.launcher.util.Dither.toEink(decoded, android.graphics.Bitmap.Config.RGB_565)
-                decoded.recycle()
-                val image = bitmap.asImageBitmap()
-                images.put(path, Entry(image, modified, length, bitmap.allocationByteCount))
+                val image = decoded.asImageBitmap()
+                images.put(path, Entry(image, modified, length, decoded.allocationByteCount))
                 image
             }
         }.getOrNull().also { if (it == null) images.remove(path) }
