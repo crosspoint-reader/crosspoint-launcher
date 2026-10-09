@@ -1,0 +1,7 @@
+// Static update feed for the CrossPoint Android app. Published by scripts/release.sh.
+{
+  "name": "crosspoint-android-updates",
+  "compatibility_date": "2026-10-08",
+  "assets": { "directory": "./public" },
+  "routes": [{ "pattern": "android.crosspointreader.com", "custom_domain": true }]
+}

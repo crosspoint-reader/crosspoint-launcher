@@ -1,0 +1,17 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+.env
+/.kotlin
+
+# Release artifacts published by scripts/release.sh
+/update-service/public/*.apk
+/update-service/public/latest.json
+/update-service/.wrangler
