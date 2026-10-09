@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.crosspoint.launcher.data.SettingsRepository
 import kotlinx.coroutines.flow.map
 
@@ -30,12 +32,35 @@ object ScreenRefresh {
         overlay.postDelayed({ root.removeView(overlay) }, FLASH_MS * 2)
     }
 
-    /** Show a brief black frame to clear the panel, then run [action] (e.g. launch a reader) on a clean screen. */
+    /**
+     * Full black→white refresh, then run [action] (e.g. launch an app) onto the clean white frame.
+     *
+     * The overlay must cover home for the WHOLE launch — including a slow cold start. Removing it on a
+     * timer re-exposes home before the new app paints, and the app then draws over that fresh home image
+     * (the ghosting bug). So we keep white covering home until the launcher is actually shown again
+     * (its next onResume after pausing for the launched app), never on a timer.
+     */
     fun flashThen(activity: Activity, action: () -> Unit) {
         val root = activity.window.decorView as ViewGroup
         val overlay = View(activity).apply { setBackgroundColor(Color.BLACK) }
         root.addView(overlay, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        overlay.postDelayed({ action(); root.removeView(overlay) }, 300)
+        val remove = { if (overlay.parent != null) root.removeView(overlay) }
+        // Black settles a full GC, then white clears it; launch after the white update has finished.
+        overlay.postDelayed({ overlay.setBackgroundColor(Color.WHITE) }, FLASH_MS)
+        overlay.postDelayed({ action() }, FLASH_MS * 2)
+
+        val lifecycle = (activity as? LifecycleOwner)?.lifecycle
+        if (lifecycle != null) {
+            lifecycle.addObserver(object : DefaultLifecycleObserver {
+                private var paused = false // the immediate catch-up onResume (still foreground) must not remove it
+                override fun onPause(owner: LifecycleOwner) { paused = true }
+                override fun onResume(owner: LifecycleOwner) {
+                    if (paused) { remove(); owner.lifecycle.removeObserver(this) }
+                }
+            })
+        }
+        // Backstop: if the launch never backgrounds the launcher (e.g. the app is missing), don't strand white.
+        overlay.postDelayed(remove, FLASH_MS * 2 + 8000)
     }
 }
 
