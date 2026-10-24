@@ -35,8 +35,6 @@ import kotlinx.coroutines.delay
 import com.crosspoint.launcher.data.SyncRepository
 import com.crosspoint.launcher.model.Book
 import java.io.File
-import android.provider.OpenableColumns
-import androidx.activity.result.contract.ActivityResultContracts
 import android.text.Selection
 import android.text.Spannable
 import android.text.style.BackgroundColorSpan
@@ -250,12 +248,14 @@ class ReaderActivity : ComponentActivity(), ReaderPanelHost {
                 controls.findViewById<TextView>(android.R.id.title).text = opened.title
                 // Hyphenation and line breaking follow the book's language, like the firmware, not the device's.
                 if (opened.language.isNotEmpty()) text.textLocale = java.util.Locale.forLanguageTag(opened.language)
-                chapter = (savedInstanceState?.getInt("chapter") ?: prefs.getInt("$key.chapter", 0))
+                // A bundle saved before the book loaded (the orientation setting recreates the reader) has no position.
+                val saved = savedInstanceState?.takeIf { it.containsKey("chapter") }
+                chapter = (saved?.getInt("chapter") ?: prefs.getInt("$key.chapter", 0))
                     .coerceIn(0, opened.chapters.lastIndex)
-                val offset = savedInstanceState?.getInt("offset") ?: prefs.getInt("$key.offset", 0)
+                val offset = saved?.getInt("offset") ?: prefs.getInt("$key.offset", 0)
                 // Like the firmware's progress.bin, the visible-text offset is the layout- and renderer-independent anchor.
-                val visible = (savedInstanceState?.getInt("visible", -1) ?: prefs.getInt("$key.visible", -1)).takeIf { it >= 0 }
-                showChapter(chapter, offset, savedInstanceState?.getBoolean("finished") ?: prefs.getBoolean("$key.finished", false), visible = visible)
+                val visible = (saved?.getInt("visible", -1) ?: prefs.getInt("$key.visible", -1)).takeIf { it >= 0 }
+                showChapter(chapter, offset, saved?.getBoolean("finished") ?: prefs.getBoolean("$key.finished", false), visible = visible)
                 synchronizePosition()
 
             } catch (e: CancellationException) { throw e
@@ -490,84 +490,17 @@ class ReaderActivity : ComponentActivity(), ReaderPanelHost {
 
     override fun dictionaryChoices(): List<String> = StarDict.discover(this).keys.toList() + DICTIONARY_APP
 
-    // Dictionaries are added like fonts: browse for a StarDict archive and install it into the reader.
-    private val dictionaryPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(::installDictionary) }
-    override fun addDictionary() = dictionaryPicker.launch(arrayOf("*/*"))
-
-    private fun installDictionary(uri: android.net.Uri) {
-        toast("Installing dictionary…")
-        lifecycleScope.launch {
-            val installed = withContext(Dispatchers.IO) {
-                runCatching {
-                    val name = contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
-                        ?.use { if (it.moveToFirst()) it.getString(0) else null } ?: "Dictionary.zip"
-                    contentResolver.openInputStream(uri)!!.use { StarDict.install(this@ReaderActivity, it, name) }
-                }
-            }
-            installed.onSuccess { name ->
-                dictionary = name
-                toast("Added $name")
-                if (panel.value is ReaderPanel.Dictionaries) openPanel(ReaderPanel.Dictionaries())
-            }.onFailure { toast(it.message ?: "Could not add that dictionary") }
-        }
-    }
     override var dictionary: String
         get() = prefs.getString(DICTIONARY_KEY, null) ?: dictionaryChoices().first()
         set(value) { prefs.edit().putString(DICTIONARY_KEY, value).apply() }
 
-    // --- Fonts: bundled firmware fonts plus fonts browsed from device storage ---
-    // Pick one file or a family's style files (Regular, Bold, Italic, Bold Italic) together.
-    private val fontPicker = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> if (uris.isNotEmpty()) importFonts(uris) }
-
+    // --- Fonts: bundled firmware fonts plus fonts found in the device's font folders ---
     override fun fontChoices() = settings.fontFamilies(this)
     override fun fontTypeface(name: String) = settings.typeface(this, name)
     override fun fontSource(name: String) = when {
         name in ReaderSettings.BUNDLED_FONTS -> "Built in"
-        ReaderSettings.deviceFonts(this)[name]?.firstOrNull()?.path?.startsWith(ReaderSettings.importedFontDir(this).path) == true -> "Added from this device"
+        ReaderSettings.deviceFonts(this)[name]?.firstOrNull()?.path?.startsWith(ReaderSettings.importedFontDir(this).path) == true -> "Sent with Wi-Fi transfer"
         else -> "Fonts folder"
-    }
-    // File managers label fonts inconsistently, so browse everything and validate the pick.
-    override fun addFont() = fontPicker.launch(arrayOf("*/*"))
-
-    /** Saves the picked files as one family folder, like the firmware's /.fonts/<Family>/. */
-    private fun importFonts(uris: List<android.net.Uri>) {
-        lifecycleScope.launch {
-            val added = withContext(Dispatchers.IO) {
-                runCatching {
-                    val picks = uris.map { uri ->
-                        uri to (contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
-                            ?.use { if (it.moveToFirst()) it.getString(0) else null } ?: "Font.ttf")
-                    }
-                    require(picks.all { it.second.substringAfterLast('.', "").lowercase() in listOf("ttf", "otf", "ttc") }) { "Choose .ttf, .otf or .ttc font files" }
-                    val family = ReaderSettings.familyName(picks.map { it.second })
-                    val dir = File(ReaderSettings.importedFontDir(this@ReaderActivity), family).apply { deleteRecursively(); mkdirs() }
-                    picks.forEach { (uri, display) -> saveFont(uri, File(dir, File(display).name.replace(Regex("[^\\w .-]"), "_"))) }
-                    requireNotNull(ReaderSettings.loadFamily(dir.listFiles().orEmpty().toList())) { dir.deleteRecursively(); "Those files aren't usable fonts" }
-                    family
-                }
-            }
-            added.onSuccess { name ->
-                settings.fontFamily = name
-                restyle()
-                toast("Added $name")
-                if (panel.value is ReaderPanel.Fonts) openPanel(ReaderPanel.Fonts())
-            }.onFailure { toast(it.message ?: "Could not add that font") }
-        }
-    }
-
-    private fun saveFont(uri: android.net.Uri, target: File) {
-        contentResolver.openInputStream(uri)!!.use { input ->
-            target.outputStream().use { output ->
-                val buffer = ByteArray(64 * 1024)
-                var total = 0L
-                while (true) {
-                    val count = input.read(buffer); if (count < 0) break
-                    total += count
-                    require(total <= 32L * 1024 * 1024) { "${target.name} is larger than 32 MB" }
-                    output.write(buffer, 0, count)
-                }
-            }
-        }
     }
 
     override fun removeFont(name: String) {

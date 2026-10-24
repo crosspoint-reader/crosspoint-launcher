@@ -70,14 +70,12 @@ interface ReaderPanelHost {
     fun openClipping(clipping: JSONObject)
     fun deleteClipping(clipping: JSONObject)
     fun dictionaryChoices(): List<String>
-    fun addDictionary()
     var dictionary: String
     fun openDictionaryApp(word: String)
     fun fontChoices(): List<String>
     fun fontTypeface(name: String): android.graphics.Typeface
-    /** "Built in", "Added from this device" or "Fonts folder". */
+    /** "Built in", "Sent with Wi-Fi transfer" or "Fonts folder". */
     fun fontSource(name: String): String
-    fun addFont()
     fun removeFont(name: String)
 }
 
@@ -247,28 +245,26 @@ fun ReaderPanelScreen(host: ReaderPanelHost, panel: ReaderPanel, navigate: (Read
                     items(notes) { (label, href) -> FootnoteRow(host, label, href, navigate) }
                 }
                 is ReaderPanel.Dictionaries -> {
-                    item { ActionRow("Add Dictionary from Device", "A StarDict .zip or .tar.gz, e.g. from Downloads", "plus") { host.addDictionary() } }
                     items(host.dictionaryChoices()) { name ->
                         version
                         SelectRow(name, "", name == host.dictionary) { host.dictionary = name; version++ }
                     }
                     item {
-                        BodyText("Download a StarDict dictionary (.zip or .tar.gz) in the browser, or send it with Wi-Fi transfer (it lands in Books), then add it here. " +
-                            "Folders in /dictionaries on this device are listed too.", muted = true, size = 12, maxLines = 4,
+                        BodyText("Unzip a StarDict dictionary into its own folder in /dictionaries on this device, " +
+                            "or send the .zip or .tar.gz to Dictionaries with Wi-Fi transfer.", muted = true, size = 12, maxLines = 4,
                             modifier = Modifier.padding(vertical = 12.dp))
                     }
                 }
                 is ReaderPanel.Fonts -> {
-                    item { ActionRow("Add Font from Device", "Browse for a .ttf or .otf file", "plus") { host.addFont() } }
                     items(host.fontChoices()) { name ->
                         version
                         val source = host.fontSource(name)
                         FontRow(name, host.fontTypeface(name), source, name == settings.fontFamily,
                             onClick = { settings.fontFamily = name; changed(null) },
-                            onLongClick = if (source == "Added from this device") ({ host.removeFont(name); version++ }) else null)
+                            onLongClick = if (source == "Sent with Wi-Fi transfer") ({ host.removeFont(name); version++ }) else null)
                     }
                     item {
-                        BodyText("Fonts in the Fonts folder on this device appear here too. Long-press an added font to remove it.",
+                        BodyText("Copy .ttf or .otf files into /fonts on this device, or send them with Wi-Fi transfer. Long-press a transferred font to remove it.",
                             muted = true, size = 12, maxLines = 3, modifier = Modifier.padding(vertical = 12.dp))
                     }
                 }
