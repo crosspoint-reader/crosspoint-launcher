@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>CrossPoint for Android</title>
+  <meta name="description" content="CrossPoint Android launcher and EPUB reader. Features, APK download, and installation instructions for USB file transfer and ADB.">
+  <link rel="canonical" href="https://android.crosspointreader.com/">
+  <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="page">
+  <main id="main">
+    <section class="introduction" aria-labelledby="headline">
+      <p class="running-title">ANDROID LAUNCHER &amp; EPUB READER</p>
+      <h1 id="headline">CrossPoint for Android</h1>
+      <p>A launcher for Android e-readers with a built-in EPUB reader. Requires Android 10 or newer and support for installing APKs.</p>
+      <p class="download"><a href="/crosspoint.apk" download="crosspoint.apk">Download APK ↓</a><span>Free and open source</span></p>
+    </section>
+    <section id="inside" aria-labelledby="features-title">
+      <h2 id="features-title">Features</h2>
+      <ul class="features">
+        <li>Home screen layouts with book covers and app shortcuts.</li>
+        <li>DRM-free EPUB reading with adjustable font size, chapter selection, page-key support, and saved reading position.</li>
+        <li>Open books in other installed reading apps.</li>
+        <li>OPDS catalog browsing and book downloads.</li>
+        <li>Built-in installer for <a href="https://auroraoss.com/">Aurora Store</a>, which lets you browse and install apps from Google Play. Install it from <b>Settings → Get App Store</b>.</li>
+        <li>Local book storage and built-in file transfer.</li>
+        <li>Optional CrossPoint Sync for reading positions and activity. An account is not required for local reading.</li>
+      </ul>
+      <div class="screens">
+        <figure><img src="/assets/home.png" width="480" height="720" alt="CrossPoint home screen with a featured book, OPDS Browser, books, file transfer, and settings"><figcaption>Home screen</figcaption></figure>
+        <figure><img src="/assets/reader.png" width="480" height="720" alt="CrossPoint EPUB reader displaying Alice’s Adventures in Wonderland"><figcaption>EPUB reader</figcaption></figure>
+        <figure><img src="/assets/settings.png" width="480" height="720" alt="CrossPoint Settings with home theme, appearance, search, sync, reader, and library options"><figcaption>Settings</figcaption></figure>
+      </div>
+      <p class="caption">Screenshots from the Android app. Layout varies by device and settings.</p>
+    </section>
+    <section id="install" class="install" aria-labelledby="install-title">
+      <h2 id="install-title">Installation</h2>
+      <p>Download <a href="/crosspoint.apk" download="crosspoint.apk">crosspoint.apk</a> and use either method below.</p>
+      <div class="install-methods">
+        <article><h3>1. USB file transfer</h3><ol>
+          <li><strong>Download the APK.</strong><p>Save <a href="/crosspoint.apk" download="crosspoint.apk">crosspoint.apk</a> to your computer.</p></li>
+          <li><strong>Connect your reader.</strong><p>Use a USB data cable, unlock the device, and select <b>File transfer / MTP</b> in its USB notification. On macOS, use an MTP-compatible file transfer app.</p></li>
+          <li><strong>Copy, then open.</strong><p>Copy the APK into the reader’s <b>Download</b> folder. On the reader, open its file manager and tap the APK.</p></li>
+          <li><strong>Allow the installation.</strong><p>If prompted, allow <b>Install unknown apps</b> for that file manager, return to the APK, and tap <b>Install</b>. You can turn that permission off afterward.</p></li>
+        </ol><p class="method-note">Already browsing on your reader? Download the APK directly and open it from Downloads.</p></article>
+        <article><h3>2. ADB</h3><ol>
+          <li><strong>Get the tools and the app.</strong><p>Download Google’s <a href="https://developer.android.com/tools/releases/platform-tools">Android Platform Tools</a> and <a href="/crosspoint.apk" download="crosspoint.apk">crosspoint.apk</a>. Extract the tools and put the APK in the same folder.</p></li>
+          <li><strong>Enable USB debugging.</strong><p>In the reader’s settings, enable <b>Developer options</b> (usually by tapping <b>Build number</b> seven times), then turn on <b>USB debugging</b>.</p></li>
+          <li><strong>Connect and authorize.</strong><p>Connect with a USB data cable. Unlock the reader and accept its USB debugging prompt.</p></li>
+          <li><strong>Run the install.</strong><p>Open a terminal in the platform-tools folder. Check that the reader is listed as <b>device</b>, then install:</p></li>
+        </ol><pre aria-label="ADB installation commands"><code>./adb devices
+./adb install -r crosspoint.apk</code></pre><p class="method-note">Windows PowerShell: use <code>.\adb.exe</code> instead of <code>./adb</code>. If you see “unauthorized,” accept the prompt on your reader. You can turn USB debugging off when finished. <a href="https://developer.android.com/tools/adb">ADB help ↗</a></p></article>
+      </div>
+      <div class="after"><div><h3>After installation</h3><p>Open CrossPoint and follow the setup prompts. Allow book storage access so it can find your EPUBs, and choose CrossPoint as your Home app when prompted. You can also change this in Android’s <b>Settings → Apps → Default apps → Home app</b>. Sign in to Sync, or skip sign-in to use local reading.</p><p>To install other Android apps, open <b>Settings → Get App Store</b> in CrossPoint. This downloads <a href="https://auroraoss.com/">Aurora Store</a> separately; approve the Android installation prompt, then open Aurora to browse Google Play apps. App compatibility varies by device, and some apps require Google Play services.</p><p class="small">Menu names vary by device. Keep your existing launcher installed; you can switch back in Default apps.</p></div></div>
+    </section>
+  </main>
+  <footer><span>CrossPoint for Android</span><div><a href="https://github.com/crosspoint-reader/crosspoint-launcher">Source code</a><a href="https://crosspointreader.com">CrossPoint</a></div></footer>
+</div>
+</body>
+</html>

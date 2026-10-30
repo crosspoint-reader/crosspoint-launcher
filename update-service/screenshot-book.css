@@ -1,0 +1,6 @@
+/* Typography used in the public-domain Alice EPUB for the reader screenshot. */
+body, div.chapter { margin: 0; padding: 0; }
+h2 { font-size: 1.05em; font-weight: normal; text-align: center; margin: 0.5em 0 0.8em; padding: 0; }
+p { font-size: 0.85em; margin: 0 0 0.5em; }
+p.opening { text-indent: 0; }
+p.opening::first-letter { initial-letter: 3; }

@@ -29,3 +29,22 @@ adb shell am instrument -w com.crosspoint.launcher.test/com.crosspoint.launcher.
 The standalone parser check covers spine order, encoded paths, missing chapters, oversized entries, XML entities, and encryption. Native instrumentation checks the sync contract with fake HTTPS responses (no production accounts), redirects without credentials, cover downsampling/cache reuse, offline retry/conflicts, reader paging/font changes/saved-position restoration, OPDS parsing/search/authentication/acquisitions, and a reader sync round trip from a firmware-style XPath through upload and fresh-local-state restoration. Offline reading and retries are exercised without production accounts. The release APK is unsigned. Real low-RAM/e-ink hardware, live catalog OAuth providers, and cross-device sync accounts still need device validation.
 
 Lists use Android's standard lazy scrolling for menus, libraries, catalogs, search results and settings. Chapter selection uses a native scrollable dialog. The 480×800 / 219 dpi S4 retains compact spacing and a single-screen sign-in form with a top-right Skip action. The CrossPoint wordmark uses the original outlined Lora SemiBold lettering from `crosspoint-tools`, rendered as an Android vector. Compact-layout instrumentation checks the form with the keyboard open and verifies that scrolling reaches every row without paging controls.
+
+### Android landing page
+
+`update-service/public/index.html` and `style.css` serve the landing page at
+<https://android.crosspointreader.com>. It uses the same static Worker as the update
+feed; `/crosspoint.apk` always points to the current signed release. No frontend
+build or JavaScript is required. The screenshots are actual emulator captures
+of the app at 480 × 720 with a public-domain sample book: Home (including OPDS Browser), EPUB reader, and Settings. The reader capture uses `update-service/screenshot-book.css` applied to the first
+chapter of the sample EPUB for a compact heading and three-line drop cap. It is
+rendered by the app, not composited onto the screenshot. The favicon comes from
+the Android vector asset.
+
+Preview with `python3 -m http.server 8765 --directory update-service/public`.
+Before deploying, run `python3 scripts/check-landing.py`; this also checks that the
+ignored APKs match `latest.json`. A fresh checkout needs the current `latest.json`,
+its versioned APK, and `crosspoint.apk` in `update-service/public` before a site-only
+deploy. Preserve these release files so the existing updater keeps working.
+Deploy website-only changes with `cd update-service && npx -y wrangler deploy`.
+Normal `scripts/release.sh` runs also publish the landing page without removing it.
