@@ -17,4 +17,5 @@
 /update-service/.wrangler
 log/
 docs/s4-rom-and-eink.md
-docs/
+docs/*
+!docs/porting/

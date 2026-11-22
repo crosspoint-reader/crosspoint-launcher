@@ -1,0 +1,48 @@
+name: Android
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests
+        run: ./gradlew --no-daemon :app:testDebugUnitTest
+
+      - name: Lint
+        run: ./gradlew --no-daemon :app:lintDebug
+
+      - name: Assemble debug
+        run: ./gradlew --no-daemon :app:assembleDebug
+
+      - name: Standalone EPUB parser check
+        run: sh scripts/check-reader.sh
+
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            app/build/reports/**
+            app/build/test-results/**
+          retention-days: 7

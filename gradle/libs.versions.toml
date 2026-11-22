@@ -8,6 +8,7 @@ composeBom = "2024.12.01"
 datastore = "1.1.1"
 jmdns = "3.6.3"
 zxing = "3.5.3"
+junit = "4.13.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -24,6 +25,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 jmdns = { group = "org.jmdns", name = "jmdns", version.ref = "jmdns" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -67,5 +67,6 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.jmdns)
     implementation(libs.zxing.core)
+    testImplementation(libs.junit)
     debugImplementation(libs.androidx.ui.tooling)
 }
